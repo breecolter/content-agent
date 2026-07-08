@@ -3,26 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import TrackerTable from "@/components/TrackerTable";
 import AddEntryModal from "@/components/AddEntryModal";
-
-export const PILLARS = ["Art", "Beauty", "Hair", "Modeling", "Lifestyle"] as const;
-export type Pillar = typeof PILLARS[number];
-
-export type TrackerEntry = {
-  id: string;
-  creator: string;
-  platform: string;
-  contentType: string;
-  pillar: Pillar;
-  caption: string;
-  likes: number;
-  comments: number;
-  shares: number;
-  views: number;
-  engagementRate: number;
-  notes: string;
-  url: string;
-  savedAt: string;
-};
+import { PILLARS } from "@/lib/tracker-types";
+import type { Pillar, TrackerEntry } from "@/lib/tracker-types";
 
 const STORAGE_KEY = "content-agent-tracker";
 

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { TrackerEntry, Pillar } from "@/app/tracker/page";
-import { PILLARS } from "@/app/tracker/page";
+import { PILLARS } from "@/lib/tracker-types";
+import type { TrackerEntry, Pillar } from "@/lib/tracker-types";
 
 type Props = {
   onAdd: (entry: Omit<TrackerEntry, "id" | "engagementRate" | "savedAt">) => void;

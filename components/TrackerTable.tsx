@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import type { TrackerEntry } from "@/app/tracker/page";
+import type { TrackerEntry } from "@/lib/tracker-types";
 
 type Props = {
   entries: TrackerEntry[];
