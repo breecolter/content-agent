@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { PILLARS } from "@/lib/tracker-types";
-import type { TrackerEntry, Pillar } from "@/lib/tracker-types";
+import { PILLARS, PAGES, STATUSES } from "@/lib/tracker-types";
+import type { TrackerEntry, Pillar, Page, Status } from "@/lib/tracker-types";
 
 type Props = {
   onAdd: (entry: Omit<TrackerEntry, "id" | "engagementRate" | "savedAt">) => void;
@@ -26,6 +26,9 @@ export default function AddEntryModal({ onAdd, onClose, existing }: Props) {
     views: existing?.views?.toString() ?? "",
     notes: existing?.notes ?? "",
     url: existing?.url ?? "",
+    followers: existing?.followers == null ? "" : existing.followers.toString(),
+    page: existing?.page ?? ("Main" as Page),
+    status: existing?.status ?? ("To recreate" as Status),
   });
 
   function set(key: string, val: string) {
@@ -46,6 +49,10 @@ export default function AddEntryModal({ onAdd, onClose, existing }: Props) {
       views: parseInt(form.views) || 0,
       notes: form.notes,
       url: form.url,
+      // blank stays null ("to backfill"), not 0
+      followers: form.followers.trim() === "" ? null : parseInt(form.followers) || null,
+      page: form.page as Page,
+      status: form.status as Status,
     });
   }
 
@@ -96,6 +103,32 @@ export default function AddEntryModal({ onAdd, onClose, existing }: Props) {
             <select className="input-field" value={form.pillar} onChange={(e) => set("pillar", e.target.value)}>
               {PILLARS.map((p) => <option key={p}>{p}</option>)}
             </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">Which page</label>
+              <select className="input-field" value={form.page} onChange={(e) => set("page", e.target.value)}>
+                {PAGES.map((p) => <option key={p}>{p}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Status</label>
+              <select className="input-field" value={form.status} onChange={(e) => set("status", e.target.value)}>
+                {STATUSES.map((s) => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="label">Their followers</label>
+            <input
+              type="number"
+              className="input-field"
+              placeholder="leave blank to backfill later"
+              value={form.followers}
+              onChange={(e) => set("followers", e.target.value)}
+            />
           </div>
 
           <div>

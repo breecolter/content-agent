@@ -15,12 +15,13 @@ type Props = {
 const COLS: { key: keyof TrackerEntry; label: string; sortable: boolean }[] = [
   { key: "creator", label: "Creator", sortable: true },
   { key: "platform", label: "Platform", sortable: true },
-  { key: "contentType", label: "Type", sortable: true },
+  { key: "page", label: "Page", sortable: true },
   { key: "views", label: "Views", sortable: true },
+  { key: "followers", label: "Followers", sortable: true },
   { key: "likes", label: "Likes", sortable: true },
   { key: "comments", label: "Comments", sortable: true },
-  { key: "shares", label: "Shares", sortable: true },
   { key: "engagementRate", label: "Eng. Rate", sortable: true },
+  { key: "status", label: "Status", sortable: true },
 ];
 
 function fmt(n: number) {
@@ -28,6 +29,20 @@ function fmt(n: number) {
   if (n >= 1_000) return (n / 1_000).toFixed(1) + "K";
   return n.toString();
 }
+
+/** null followers means "to backfill", which is different from zero. */
+function fmtFollowers(n: number | null | undefined) {
+  if (n == null) return "—";
+  return fmt(n);
+}
+
+const STATUS_STYLES: Record<string, string> = {
+  "To recreate": "bg-terracotta/10 text-terracotta border-terracotta/30",
+  Scripted: "bg-amber-50 text-amber-700 border-amber-200",
+  Filmed: "bg-blue-50 text-blue-700 border-blue-200",
+  Posted: "bg-green-50 text-green-700 border-green-200",
+  Skipped: "bg-cream text-warm-gray border-light-tan",
+};
 
 export default function TrackerTable({ entries, sortBy, sortDir, onSort, onDelete, onEdit }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -71,11 +86,11 @@ export default function TrackerTable({ entries, sortBy, sortDir, onSort, onDelet
               >
                 <td className="px-4 py-3 font-medium text-gray-800">{entry.creator}</td>
                 <td className="px-4 py-3 text-warm-gray">{entry.platform}</td>
-                <td className="px-4 py-3 text-warm-gray">{entry.contentType}</td>
+                <td className="px-4 py-3 text-warm-gray">{entry.page ?? "—"}</td>
                 <td className="px-4 py-3">{fmt(entry.views)}</td>
+                <td className="px-4 py-3 text-warm-gray">{fmtFollowers(entry.followers)}</td>
                 <td className="px-4 py-3">{fmt(entry.likes)}</td>
                 <td className="px-4 py-3">{fmt(entry.comments)}</td>
-                <td className="px-4 py-3">{fmt(entry.shares)}</td>
                 <td className="px-4 py-3">
                   <span
                     className={`font-semibold ${
@@ -89,6 +104,19 @@ export default function TrackerTable({ entries, sortBy, sortDir, onSort, onDelet
                     {entry.engagementRate.toFixed(2)}%
                   </span>
                 </td>
+                <td className="px-4 py-3">
+                  {entry.status ? (
+                    <span
+                      className={`inline-block whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+                        STATUS_STYLES[entry.status] ?? "bg-cream text-warm-gray border-light-tan"
+                      }`}
+                    >
+                      {entry.status}
+                    </span>
+                  ) : (
+                    <span className="text-warm-gray">—</span>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-warm-gray text-xs">
                   {expandedId === entry.id ? "▲" : "▼"}
                 </td>
@@ -96,7 +124,7 @@ export default function TrackerTable({ entries, sortBy, sortDir, onSort, onDelet
 
               {expandedId === entry.id && (
                 <tr className="border-b border-light-tan bg-cream">
-                  <td colSpan={9} className="px-6 py-4">
+                  <td colSpan={COLS.length + 1} className="px-6 py-4">
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       {entry.caption && (
                         <div>
@@ -122,10 +150,20 @@ export default function TrackerTable({ entries, sortBy, sortDir, onSort, onDelet
                         <p className="font-sans text-sm text-warm-gray italic">No notes added.</p>
                       )}
                     </div>
-                    <div className="mt-3">
+                    <div className="mt-3 flex flex-wrap gap-2">
                       <span className="inline-block font-sans text-xs font-semibold text-terracotta bg-cream border border-light-tan px-3 py-1 rounded-full">
                         {entry.pillar}
                       </span>
+                      {entry.contentType && (
+                        <span className="inline-block font-sans text-xs text-warm-gray bg-cream border border-light-tan px-3 py-1 rounded-full">
+                          {entry.contentType}
+                        </span>
+                      )}
+                      {entry.shares > 0 && (
+                        <span className="inline-block font-sans text-xs text-warm-gray bg-cream border border-light-tan px-3 py-1 rounded-full">
+                          {fmt(entry.shares)} shares
+                        </span>
+                      )}
                     </div>
 
                     {entry.url && (

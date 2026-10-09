@@ -29,11 +29,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <nav className="bg-white border-b border-light-tan px-6 py-4 flex items-center justify-between sticky top-0 z-50">
           <h1 className="font-serif text-xl font-semibold text-burgundy">Content Agent</h1>
           <div className="flex gap-4">
-            <a href="/" className="font-sans text-sm text-warm-gray hover:text-terracotta transition-colors">
-              Captions
-            </a>
             <a href="/tracker" className="font-sans text-sm text-warm-gray hover:text-terracotta transition-colors">
               Tracker
+            </a>
+            <a href="/" className="font-sans text-sm text-warm-gray hover:text-terracotta transition-colors">
+              Captions
             </a>
           </div>
         </nav>

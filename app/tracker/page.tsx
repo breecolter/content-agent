@@ -3,10 +3,14 @@
 import { useState, useEffect, useCallback } from "react";
 import TrackerTable from "@/components/TrackerTable";
 import AddEntryModal from "@/components/AddEntryModal";
-import { PILLARS } from "@/lib/tracker-types";
-import type { Pillar, TrackerEntry } from "@/lib/tracker-types";
+import { PILLARS, PAGES } from "@/lib/tracker-types";
+import type { Pillar, Page, TrackerEntry } from "@/lib/tracker-types";
+import { YOUTUBE_RESEARCH } from "@/lib/youtube-research";
+import { VIRAL_RESEARCH } from "@/lib/viral-research";
 
 const STORAGE_KEY = "content-agent-tracker";
+const RESEARCH_SEEDED_KEY = "content-agent-research-seeded-v1";
+const VIRAL_SEEDED_KEY = "content-agent-viral-seeded-v1";
 
 function calcEngagement(entry: Omit<TrackerEntry, "engagementRate" | "id" | "savedAt">) {
   if (!entry.views || entry.views === 0) return 0;
@@ -20,11 +24,34 @@ export default function TrackerPage() {
   const [sortBy, setSortBy] = useState<keyof TrackerEntry>("engagementRate");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [filterPillar, setFilterPillar] = useState<"all" | Pillar>("all");
+  const [filterPage, setFilterPage] = useState<"all" | Page>("all");
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setEntries(JSON.parse(stored));
+      let working: TrackerEntry[] = stored ? JSON.parse(stored) : [];
+      let changed = false;
+
+      // Append a research batch exactly once. Existing rows are never touched,
+      // a video already tracked isn't duplicated, and the flag means deleting a
+      // seeded row keeps it deleted instead of resurrecting it next visit.
+      const appendOnce = (flagKey: string, batch: TrackerEntry[]) => {
+        if (localStorage.getItem(flagKey)) return;
+        const seenIds = new Set(working.map((e) => e.id));
+        const seenUrls = new Set(working.map((e) => e.url).filter(Boolean));
+        const toAdd = batch.filter(
+          (r) => !seenIds.has(r.id) && !(r.url && seenUrls.has(r.url))
+        );
+        working = [...toAdd, ...working];
+        localStorage.setItem(flagKey, new Date().toISOString());
+        changed = true;
+      };
+
+      appendOnce(RESEARCH_SEEDED_KEY, YOUTUBE_RESEARCH);
+      appendOnce(VIRAL_SEEDED_KEY, VIRAL_RESEARCH);
+
+      if (changed) localStorage.setItem(STORAGE_KEY, JSON.stringify(working));
+      setEntries(working);
     } catch {}
   }, []);
 
@@ -72,14 +99,17 @@ export default function TrackerPage() {
 
   function exportCSV() {
     const headers = [
-      "Creator", "Platform", "Content Type", "Caption", "Likes", "Comments",
-      "Shares", "Views", "Engagement Rate %", "Notes", "Saved At",
+      "Creator", "Platform", "Page", "Status", "Content Type", "Caption",
+      "Likes", "Comments", "Shares", "Views", "Followers",
+      "Engagement Rate %", "Notes", "Link", "Saved At",
     ];
     const rows = entries.map((e) => [
-      e.creator, e.platform, e.contentType,
+      e.creator, e.platform, e.page ?? "", e.status ?? "", e.contentType,
       `"${e.caption.replace(/"/g, '""')}"`,
       e.likes, e.comments, e.shares, e.views,
-      e.engagementRate, `"${e.notes.replace(/"/g, '""')}"`, e.savedAt,
+      e.followers ?? "",
+      e.engagementRate, `"${e.notes.replace(/"/g, '""')}"`,
+      `"${(e.url ?? "").replace(/"/g, '""')}"`, e.savedAt,
     ]);
     const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -92,6 +122,7 @@ export default function TrackerPage() {
   }
 
   const displayed = entries
+    .filter((e) => filterPage === "all" || e.page === filterPage)
     .filter((e) => filterPillar === "all" || e.pillar === filterPillar)
     .sort((a, b) => {
       const av = a[sortBy];
@@ -123,6 +154,23 @@ export default function TrackerPage() {
             + Add Entry
           </button>
         </div>
+      </div>
+
+      <div className="flex gap-2 flex-wrap items-center">
+        <span className="font-sans text-xs text-warm-gray uppercase tracking-wide mr-1">Page</span>
+        {(["all", ...PAGES] as const).map((p) => (
+          <button
+            key={p}
+            onClick={() => setFilterPage(p as "all" | Page)}
+            className={`px-3 py-1.5 rounded-full font-sans text-xs font-medium border transition-all ${
+              filterPage === p
+                ? "bg-burgundy text-white border-burgundy"
+                : "bg-cream text-warm-gray border-light-tan"
+            }`}
+          >
+            {p === "all" ? "All" : p === "Art" ? "Art page" : "Main page"}
+          </button>
+        ))}
       </div>
 
       <div className="flex gap-2 flex-wrap">
